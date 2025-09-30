@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direction vs Significant Move Backtest Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .comparison-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .comparison-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .positive {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .negative {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        
+        .legend-box {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            display: inline-block;
+            width: 20px;
+            height: 12px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+        
+        .tab-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-button.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Comprehensive Backtest Analysis: Direction vs Significant Move</h1>
+        
+        <!-- Overall Summary Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Direction Avg Accuracy</div>
+                <div class="metric-value">65.51%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Direction Avg Sharpe</div>
+                <div class="metric-value">6.13</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Direction Avg Return</div>
+                <div class="metric-value">197.91%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Best Sig Move (1%) Sharpe</div>
+                <div class="metric-value">0.84</div>
+            </div>
+        </div>
+        
+        <!-- Movement Type Comparison -->
+        <div class="dashboard">
+            <div class="card">
+                <h2>Classification Metrics Comparison</h2>
+                <div class="chart-container">
+                    <canvas id="classificationChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Financial Metrics Comparison</h2>
+                <div class="chart-container">
+                    <canvas id="financialChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Index-wise Performance Tabs -->
+        <div class="tab-container">
+            <h2>Performance by Index</h2>
+            <div class="tabs">
+                <button class="tab-button active" onclick="showTab('nifty50')">NIFTY50</button>
+                <button class="tab-button" onclick="showTab('niftybank')">NIFTYBANK</button>
+                <button class="tab-button" onclick="showTab('niftyit')">NIFTYIT</button>
+            </div>
+            
+            <div id="nifty50" class="tab-content active">
+                <div class="chart-container">
+                    <canvas id="nifty50Chart"></canvas>
+                </div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Movement Type</th>
+                            <th>Accuracy</th>
+                            <th>F1 Score</th>
+                            <th>Sharpe Ratio</th>
+                            <th>Total Return</th>
+                            <th>Win Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Direction</strong></td>
+                            <td class="positive">66.27%</td>
+                            <td>0.6843</td>
+                            <td class="positive">6.04</td>
+                            <td class="positive">162.19%</td>
+                            <td class="positive">66.18%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 1%</strong></td>
+                            <td>27.77%</td>
+                            <td>0.3825</td>
+                            <td>0.98</td>
+                            <td>29.11%</td>
+                            <td>52.71%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 2%</strong></td>
+                            <td class="positive">75.19%</td>
+                            <td>0.1933</td>
+                            <td class="negative">-0.04</td>
+                            <td class="negative">-9.16%</td>
+                            <td>49.57%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 3%</strong></td>
+                            <td class="positive">96.91%</td>
+                            <td>0.1376</td>
+                            <td class="negative">-1.01</td>
+                            <td class="negative">-32.92%</td>
+                            <td>47.60%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="niftybank" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="niftybankChart"></canvas>
+                </div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Movement Type</th>
+                            <th>Accuracy</th>
+                            <th>F1 Score</th>
+                            <th>Sharpe Ratio</th>
+                            <th>Total Return</th>
+                            <th>Win Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Direction</strong></td>
+                            <td class="positive">66.03%</td>
+                            <td>0.6881</td>
+                            <td class="positive">6.38</td>
+                            <td class="positive">194.04%</td>
+                            <td class="positive">66.03%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 1%</strong></td>
+                            <td>35.31%</td>
+                            <td>0.4773</td>
+                            <td>1.10</td>
+                            <td>33.63%</td>
+                            <td>52.84%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 2%</strong></td>
+                            <td class="positive">64.66%</td>
+                            <td>0.2681</td>
+                            <td>0.67</td>
+                            <td>18.62%</td>
+                            <td>51.81%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 3%</strong></td>
+                            <td class="positive">92.73%</td>
+                            <td>0.2537</td>
+                            <td class="negative">-0.85</td>
+                            <td class="negative">-23.73%</td>
+                            <td>47.87%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="niftyit" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="niftyitChart"></canvas>
+                </div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Movement Type</th>
+                            <th>Accuracy</th>
+                            <th>F1 Score</th>
+                            <th>Sharpe Ratio</th>
+                            <th>Total Return</th>
+                            <th>Win Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Direction</strong></td>
+                            <td class="positive">64.24%</td>
+                            <td>0.6569</td>
+                            <td class="positive">5.97</td>
+                            <td class="positive">237.69%</td>
+                            <td class="positive">64.24%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 1%</strong></td>
+                            <td>36.65%</td>
+                            <td>0.5301</td>
+                            <td>0.43</td>
+                            <td>26.27%</td>
+                            <td>51.56%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 2%</strong></td>
+                            <td>52.09%</td>
+                            <td>0.3182</td>
+                            <td>0.68</td>
+                            <td>37.92%</td>
+                            <td>53.17%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sig Move 3%</strong></td>
+                            <td class="positive">89.75%</td>
+                            <td>0.3092</td>
+                            <td class="negative">-0.48</td>
+                            <td class="negative">-11.19%</td>
+                            <td>48.24%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Split Type Performance -->
+        <div class="dashboard">
+            <div class="card">
+                <h2>Performance by Split Type - Sharpe Ratio</h2>
+                <div class="chart-container">
+                    <canvas id="splitSharpeChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Performance by Split Type - Returns</h2>
+                <div class="chart-container">
+                    <canvas id="splitReturnChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Insights -->
+        <div class="card">
+            <h2>🎯 Key Insights</h2>
+            <div class="legend-box">
+                <h3 style="color: #667eea; margin-bottom: 15px;">Direction Prediction Dominance:</h3>
+                <ul style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>Superior Financial Performance:</strong> Direction prediction consistently outperforms all significant move thresholds with average Sharpe Ratio of 6.13 vs best sig move (1%) at 0.84</li>
+                    <li><strong>Higher Returns:</strong> Average returns of 197.91% for direction vs 29.67% for best performing sig move (1%)</li>
+                    <li><strong>Better Risk-Adjusted Performance:</strong> Positive Sharpe ratios across all indices for direction, while sig moves show negative Sharpe at higher thresholds</li>
+                </ul>
+                
+                <h3 style="color: #764ba2; margin-top: 20px; margin-bottom: 15px;">Significant Move Challenges:</h3>
+                <ul style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>Accuracy Paradox:</strong> Higher thresholds (3%) show high accuracy (93%+) but poor financial performance due to class imbalance</li>
+                    <li><strong>Deteriorating Performance:</strong> As threshold increases from 1% to 3%, financial metrics worsen despite higher accuracy</li>
+                    <li><strong>Negative Returns at High Thresholds:</strong> 2% and 3% thresholds show negative returns across most configurations</li>
+                </ul>
+                
+                <h3 style="color: #10b981; margin-top: 20px; margin-bottom: 15px;">Index-Specific Observations:</h3>
+                <ul style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>NIFTYIT:</strong> Highest direction returns (237.69%) but most volatile sig move performance</li>
+                    <li><strong>NIFTYBANK:</strong> Most consistent performance with highest direction Sharpe (6.38)</li>
+                    <li><strong>NIFTY50:</strong> Best sig move 2% accuracy (75.19%) but still negative returns</li>
+                </ul>
+                
+                <h3 style="color: #ef4444; margin-top: 20px; margin-bottom: 15px;">Split Type Analysis:</h3>
+                <ul style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>Fixed Split:</strong> Highest absolute returns but may suffer from temporal distribution shift</li>
+                    <li><strong>Rolling Windows:</strong> More consistent but lower returns, with 12-month showing best Sharpe for direction (6.89)</li>
+                    <li><strong>Stability vs Returns Trade-off:</strong> Shorter rolling windows provide stability but sacrifice total returns</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Chart configurations
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        };
+        
+        // Classification Metrics Chart
+        const classificationCtx = document.getElementById('classificationChart').getContext('2d');
+        new Chart(classificationCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Direction', 'Sig Move 1%', 'Sig Move 2%', 'Sig Move 3%'],
+                datasets: [
+                    {
+                        label: 'Accuracy (%)',
+                        data: [65.51, 33.23, 64.00, 93.13],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'F1 Score (×100)',
+                        data: [67.65, 46.31, 25.97, 23.33],
+                        backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+        
+        // Financial Metrics Chart
+        const financialCtx = document.getElementById('financialChart').getContext('2d');
+        new Chart(financialCtx, {
+            type: 'line',
+            data: {
+                labels: ['Direction', 'Sig Move 1%', 'Sig Move 2%', 'Sig Move 3%'],
+                datasets: [
+                    {
+                        label: 'Sharpe Ratio',
+                        data: [6.13, 0.84, 0.44, -0.78],
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Total Return (÷10)',
+                        data: [19.79, 2.97, 1.58, -2.26],
+                        borderColor: 'rgb(16, 185, 129)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+        
+        // NIFTY50 Chart
+        const nifty50Ctx = document.getElementById('nifty50Chart').getContext('2d');
+        new Chart(nifty50Ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Accuracy', 'F1 Score', 'Sharpe Ratio', 'Returns (÷10)', 'Win Rate'],
+                datasets: [
+                    {
+                        label: 'Direction',
+                        data: [66.27, 68.43, 60.4, 16.22, 66.18],
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    },
+                    {
+                        label: 'Sig Move 1%',
+                        data: [27.77, 38.25, 9.8, 2.91, 52.71],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        // NIFTYBANK Chart
+        const niftybankCtx = document.getElementById('niftybankChart').getContext('2d');
+        new Chart(niftybankCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Accuracy', 'F1 Score', 'Sharpe Ratio', 'Returns (÷10)', 'Win Rate'],
+                datasets: [
+                    {
+                        label: 'Direction',
+                        data: [66.03, 68.81, 63.8, 19.40, 66.03],
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    },
+                    {
+                        label: 'Sig Move 1%',
+                        data: [35.31, 47.73, 11.0, 3.36, 52.84],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        // NIFTYIT Chart
+        const niftyitCtx = document.getElementById('niftyitChart').getContext('2d');
+        new Chart(niftyitCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Accuracy', 'F1 Score', 'Sharpe Ratio', 'Returns (÷10)', 'Win Rate'],
+                datasets: [
+                    {
+                        label: 'Direction',
+                        data: [64.24, 65.69, 59.7, 23.77, 64.24],
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    },
+                    {
+                        label: 'Sig Move 1%',
+                        data: [36.65, 53.01, 4.3, 2.63, 51.56],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        // Split Type Sharpe Chart
+        const splitSharpeCtx = document.getElementById('splitSharpeChart').getContext('2d');
+        new Chart(splitSharpeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Fixed', 'Rolling 12m', 'Rolling 18m', 'Rolling 24m'],
+                datasets: [
+                    {
+                        label: 'Direction',
+                        data: [5.98, 6.89, 6.33, 6.04],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    },
+                    {
+                        label: 'Sig Move 1%',
+                        data: [0.72, 1.07, 1.19, 0.99],
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    },
+                    {
+                        label: 'Sig Move 2%',
+                        data: [0.35, 1.18, 0.30, 0.37],
+                        backgroundColor: 'rgba(251, 191, 36, 0.8)',
+                    },
+                    {
+                        label: 'Sig Move 3%',
+                        data: [-0.68, -1.18, -0.96, -0.82],
+                        backgroundColor: 'rgba(156, 163, 175, 0.8)',
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+        
+        // Split Type Return Chart
+        const splitReturnCtx = document.getElementById('splitReturnChart').getContext('2d');
+        new Chart(splitReturnCtx, {
+            type: 'line',
+            data: {
+                labels: ['Fixed', 'Rolling 12m', 'Rolling 18m', 'Rolling 24m'],
+                datasets: [
+                    {
+                        label: 'Direction',
+                        data: [271.9, 19.0, 42.1, 55.1],
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Sig Move 1%',
+                        data: [37.4, 2.2, 16.8, 21.9],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Sig Move 2%',
+                        data: [17.8, 2.6, 14.1, 19.3],
+                        borderColor: 'rgb(251, 191, 36)',
+                        backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Sig Move 3%',
+                        data: [-35.6, -3.0, 9.2, 11.9],
+                        borderColor: 'rgb(156, 163, 175)',
+                        backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+        
+        // Tab functionality
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Mark button as active
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
