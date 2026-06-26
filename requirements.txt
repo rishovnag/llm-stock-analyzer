@@ -1,0 +1,12 @@
+pandas>=1.5.0
+numpy>=1.23.0
+scikit-learn>=1.2.0
+matplotlib>=3.5.0
+seaborn>=0.12.0
+python-dotenv>=1.0.0
+aiohttp>=3.8.0
+tqdm>=4.65.0
+openpyxl>=3.0.0
+openai>=1.0.0          # For GPT models
+anthropic>=0.18.0      # For Claude models
+google-generativeai>=0.3.0  # For Gemini models

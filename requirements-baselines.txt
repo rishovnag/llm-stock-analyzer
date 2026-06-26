@@ -1,0 +1,3 @@
+# Extra dependencies for the LSTM/GRU recurrent baselines only.
+# Kept separate so the core LLM pipeline has no deep-learning dependency.
+tensorflow>=2.11.0
